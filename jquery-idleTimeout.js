@@ -1,3 +1,5 @@
+// THIS IS A FORKED VERSION OF idleTimeout - see https://github.com/OneSourceInformationServices/jquery-idleTimeout
+
 /**
  * This work is licensed under the MIT License
  *
@@ -9,11 +11,14 @@
  **/
 
 /*global jQuery: false, document: false, store: false, clearInterval: false, setInterval: false, setTimeout: false, window: false, alert: false*/
-/*jslint indent: 2, sloppy: true*/
+define('jq_idleTimeout', [
+    'jquery',
+    'store',
+    "text!templates/modal/timeoutWarningTemplate.html"
+], function ($, store, modalTemplate) {
+    window.store = store;
 
-(function ($) {
-
-  $.fn.idleTimeout = function (options) {
+    $.fn.idleTimeout = function (options) {
 
     //##############################
     //## Configuration Variables
@@ -116,26 +121,24 @@
     };
 
     openWarningDialog = function () {
-      var dialogContent = "<div id='idletimer_warning_dialog'><p>" + opts.dialogText + "</p><p style='display:inline'>Time remaining: <div style='display:inline' id='countdownDisplay'></div></p></div>";
+//      var dialogContent = "<div id='idletimer_warning_dialog'><p>" + opts.dialogText + "</p><p style='display:inline'>Time remaining: <div style='display:inline' id='countdownDisplay'></div></p></div>";
+      if($('#idletimer_warning_dialog').size() === 0){
+          $('body').append($(modalTemplate));
+          $('#idletimer_warning_dialog').find('.btn-submit').click( function(){
+              destroyWarningDialog();
+              stopDialogTimer();
+              startIdleTimer();
+          });
+          $('#idletimer_warning_dialog').find('.btn-cancel').click( function(){
+              //if the user clicks log out, really log them out instead of killing session
+              window.location = '/logout';
+              //logoutUser();
+          });
+      }
 
-      $(dialogContent).dialog({
-        buttons: {
-          "Stay Logged In": function () {
-            destroyWarningDialog();
-            stopDialogTimer();
-            startIdleTimer();
-          },
-          "Log Out Now": function () {
-            logoutUser();
-          }
-        },
-        closeOnEscape: false,
-        modal: true,
-        title: opts.dialogTitle
+      $('#idletimer_warning_dialog').modal({
+          keyboard: false
       });
-
-      // hide the dialog's upper right corner "x" close button
-      $('.ui-dialog-titlebar-close').css('display', 'none');
 
       // start the countdown display
       countdownDisplay();
@@ -170,7 +173,7 @@
     };
 
     destroyWarningDialog = function () {
-      $("#idletimer_warning_dialog").dialog('destroy').remove();
+      $("#idletimer_warning_dialog").modal('hide');
       document.title = origTitle;
     };
 
@@ -221,4 +224,4 @@
       startIdleTimer();
     });
   };
-}(jQuery));
+});
